@@ -22,7 +22,30 @@ class MFADisableRequest(BaseModel):
     password: str
 
 router = APIRouter()
-
+"""
+  ┌─────────────────────────────────────────────────────────────┐                                           
+  │                    Login Flow with MFA                       │                                          
+  └─────────────────────────────────────────────────────────────┘                                           
+                                                                                                            
+  Step 1: Username + Password                                                                               
+     ↓                                                                                                      
+  [Authentication Success] → Check: is_mfa_enabled?                                                         
+     ↓                              ↓              ↓                                                        
+     NO ─────────────→ Issue JWT Token         YES                                                          
+                       (Full Access)             ↓                                                          
+                                      Request TOTP Code                                                     
+                                                 ↓                                                          
+                                      User enters 6-digit code                                              
+                                                 ↓                                                          
+                                      Verify TOTP (30s window)                                              
+                                                 ↓                                                          
+                                      ┌──────────┴──────────┐                                               
+                                   Valid?              Invalid?                                             
+                                      ↓                     ↓                                               
+                              Issue JWT Token      Reject + Audit Log                                       
+                              (Full Access)         
+"""
+# 1. ユーザー自身による登録: MFA登録開始 (/mfa/enroll) 
 @router.post("/mfa/enroll", response_model=schemas.MfaEnrollmentResponse, 
             status_code=status.HTTP_200_OK, summary="MFA登録開始", description="MFA登録開始")
 async def enroll_mfa(
